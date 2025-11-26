@@ -1,0 +1,12 @@
+[Unit]
+Description=Update auto-novel
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/auto-novel
+ExecStartPre=/usr/bin/docker compose pull
+ExecStart=/usr/bin/docker compose up -d
+ExecStartPost=/usr/bin/docker image prune -f

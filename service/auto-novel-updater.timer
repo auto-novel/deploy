@@ -1,0 +1,10 @@
+[Unit]
+Description=Update auto-novel
+Requires=auto-novel-updater.service
+
+[Timer]
+OnCalendar=*-*-* 04:00:00
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=timers.target
