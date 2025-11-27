@@ -196,3 +196,10 @@ docker-compose up -d
 ```bash
 curl http://127.0.0.1
 ```
+
+### 配置运维脚本
+
+```bash
+systemctl enable auto-novel-updater.timer
+systemctl start auto-novel-updater.timer
+```
