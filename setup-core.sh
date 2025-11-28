@@ -150,7 +150,7 @@ setup_bashrc() {
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # Configured by setup-core.sh
 
-PS1='\[\e[35;1m\][\u@core \[\e[94;1m\]\w\[\e[35;1m\]]\$\[\e[m\] '
+PS1='\[\e[35;1m\][\u@\h \[\e[94;1m\]\w\[\e[35;1m\]]\$\[\e[m\] '
 
 export LS_OPTIONS='--color=auto'
 eval "$(dircolors)"
@@ -341,6 +341,8 @@ setup_auto_novel() {
     log_info "Setting up auto-novel..."
 
     # Create directory structure
+    # Note: ES requires 777 permissions for plugins/data directories when running in Docker
+    # because the elasticsearch user inside the container needs write access
     mkdir -p "${AUTO_NOVEL_DIR}/data/es/plugins"
     mkdir -p "${AUTO_NOVEL_DIR}/data/es/data"
     chmod 777 -R "${AUTO_NOVEL_DIR}/data/es/plugins"
@@ -352,7 +354,7 @@ setup_auto_novel() {
         log_info "ES analysis-icu plugin already installed."
     else
         log_info "Installing ES analysis-icu plugin..."
-        docker run --rm -it --entrypoint bash \
+        docker run --rm --entrypoint bash \
             -v "${AUTO_NOVEL_DIR}/data/es/plugins:/usr/share/elasticsearch/plugins" \
             elasticsearch:8.6.1 \
             -c "bin/elasticsearch-plugin install analysis-icu" || {
