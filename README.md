@@ -12,9 +12,9 @@ bash reinstall.sh debian 12 --password "password"
 ```
 
 ```shell
-apt update
-apt upgrade
-apt install vim
+apt-get update
+apt-get upgrade -y
+apt-get install -y vim ca-certificates curl gnupg
 ```
 
 ### 关闭 ssh 密码登录
@@ -35,16 +35,24 @@ systemctl restart sshd
 ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 ```
 
+### 配置防火墙
+
+```bash
+# Core
+sed -i 's/12345/${PORT}/g' ./linux/etc/nftables.core.conf
+cp -n ./linux/etc/nftables.core.conf /etc/nftables.conf
+systemctl restart nftable
+
+# Shield
+sed -i 's/12345/${PORT}/g' ./linux/etc/nftables.shd.conf
+cp -n ./linux/etc/nftables.shd.conf /etc/nftables.conf
+systemctl restart nftable
+```
+
 ## 部署 Shield
 
 ```bash
 ./setup.sh shield
-
-# 配置防火墙
-cd linux
-sed -i 's/12345/${PORT}/g' ./etc/nftables.shd.conf
-cp -n ./etc/nftables.shd.conf /etc/nftables.conf
-systemctl restart nftable
 ```
 
 ### 启动服务
@@ -55,12 +63,6 @@ systemctl restart nftable
 
 ```bash
 ./setup.sh core
-
-# 配置防火墙
-cd linux
-sed -i 's/12345/${PORT}/g' ./etc/nftables.core.conf
-cp -n ./etc/nftables.core.conf /etc/nftables.conf
-systemctl restart nftable
 ```
 
 ### 安装 ES 插件

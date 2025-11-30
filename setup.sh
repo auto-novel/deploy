@@ -21,14 +21,6 @@ log_error() {
     echo -e "${RED}[ERROR]${RESET} $1"
 }
 
-setup_firewall() {
-    log_info "配置防火墙..."
-
-    # 配置防火墙，注意要改 ssh 的端口号
-    cp -n ./etc/nftables.conf /etc/nftables.conf
-    # systemctl restart nftable
-}
-
 setup_login_shell() {
     local hostname=$1
 
@@ -45,14 +37,6 @@ setup_login_shell() {
 
     # 配置 bashrc
     cp -n ./root/.bashrc /root/.bashrc
-}
-
-setup_basic_packages() {
-    log_info "更新系统和安装软件包..."
-
-    apt-get update -qq
-    apt-get upgrade -y -qq
-    apt-get install -y -qq vim ca-certificates curl gnupg
 }
 
 setup_docker() {
@@ -103,13 +87,7 @@ setup_tailscale() {
     tailscale up
 }
 
-setup() {
-    local hostname=$1
-
-    setup_firewall
-    setup_login_shell "$hostname"
-    setup_basic_packages
-    setup_docker
-    setup_cloudflared
-    setup_tailscale
-}
+setup_login_shell "$1"
+setup_docker
+setup_cloudflared
+setup_tailscale
