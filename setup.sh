@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-cd linux
+# 进入脚本所在目录的 linux 子文件夹
+cd "$(dirname "$0")/linux" || exit 1
 
-# Colors for output
 GREEN="\e[1;32m"
 YELLOW="\e[1;33m"
 RED="\e[1;31m"
