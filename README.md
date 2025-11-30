@@ -42,8 +42,8 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 
 # 配置防火墙
 cd linux
-sed -i 's/12345/${PORT}/g' ./etc/nftables.conf
-cp -n ./etc/nftables.conf /etc/nftables.conf
+sed -i 's/12345/${PORT}/g' ./etc/nftables.shd.conf
+cp -n ./etc/nftables.shd.conf /etc/nftables.conf
 systemctl restart nftable
 ```
 
@@ -58,8 +58,8 @@ systemctl restart nftable
 
 # 配置防火墙
 cd linux
-sed -i 's/12345/${PORT}/g' ./etc/nftables.conf
-cp -n ./etc/nftables.conf /etc/nftables.conf
+sed -i 's/12345/${PORT}/g' ./etc/nftables.core.conf
+cp -n ./etc/nftables.core.conf /etc/nftables.conf
 systemctl restart nftable
 ```
 
