@@ -37,28 +37,28 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 
 ## 部署 Shield
 
-### 运行配置脚本
-
 ```bash
 ./setup.sh shield
 
 # 配置防火墙
+cd linux
+sed -i 's/12345/${PORT}/g' ./etc/nftables.conf
 cp -n ./etc/nftables.conf /etc/nftables.conf
 systemctl restart nftable
 ```
 
-# 启动服务
+### 启动服务
 
 - [Status](https://github.com/auto-novel/status)
 
 ## 部署 Core
 
-### 运行配置脚本
-
 ```bash
 ./setup.sh core
 
 # 配置防火墙
+cd linux
+sed -i 's/12345/${PORT}/g' ./etc/nftables.conf
 cp -n ./etc/nftables.conf /etc/nftables.conf
 systemctl restart nftable
 ```

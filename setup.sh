@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cd linux
+
 # Colors for output
 GREEN="\e[1;32m"
 YELLOW="\e[1;33m"
