@@ -1,7 +1,5 @@
 # Deploy
 
-[![GPL-3.0](https://img.shields.io/github/license/auto-novel/deploy)](https://github.com/auto-novel/deploy#license)
-
 ## 配置服务器
 
 ### 安装 Debian OS
