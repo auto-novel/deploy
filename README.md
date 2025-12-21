@@ -21,7 +21,7 @@ apt-get install -y vim ca-certificates curl gnupg
 shuf -i 10000-60000 -n 1 # 生成随机端口
 
 vim /etc/ssh/sshd_config
-# Port 47679
+# Port 12345
 # PasswordAuthentication no
 
 systemctl restart sshd
