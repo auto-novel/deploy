@@ -94,8 +94,5 @@ curl http://127.0.0.1
 ### 配置运维脚本
 
 ```bash
-cp -n ./etc/systemd/system/auto-novel-updater.service /etc/systemd/system/auto-novel-updater.service
-cp -n ./etc/systemd/system/auto-novel-updater.timer /etc/systemd/system/auto-novel-updater.timer
-systemctl enable auto-novel-updater.timer
-systemctl start auto-novel-updater.timer
+make install-service
 ```

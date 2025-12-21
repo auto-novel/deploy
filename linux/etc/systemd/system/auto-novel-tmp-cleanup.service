@@ -1,0 +1,8 @@
+[Unit]
+Description=Clean auto-novel tmp file
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/root/auto-novel
+ExecStart=/usr/bin/find ./data/files-temp -type f -mtime +3 -delete
