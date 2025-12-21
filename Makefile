@@ -1,7 +1,7 @@
 .PHONY: install-service
 
 install-service:
-	cp ./script/systemd/* /etc/systemd/system/
+	cp ./linux/etc/systemd/system/* /etc/systemd/system/
 	systemctl daemon-reload
 	systemctl enable auto-novel-updater.timer
 	systemctl start auto-novel-updater.timer
