@@ -98,3 +98,13 @@ curl http://127.0.0.1
 ```bash
 make install-service
 ```
+
+## 运维
+
+备份 auto-novel:
+
+```bash
+rsync -avhzP core:/root/auto-novel/data/files-extra ./
+rsync -avhzP core:/root/auto-novel/data/files-wenku ./
+rsync -avhzP core:/root/auto-novel/data/db.backup ./
+```
