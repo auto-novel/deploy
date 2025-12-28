@@ -1,4 +1,4 @@
-# Deploy
+# Deploy 服务器部署手册
 
 ![网站架构图](https://raw.githubusercontent.com/auto-novel/deploy/refs/heads/main/image/arch.png)
 
