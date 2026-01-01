@@ -55,7 +55,7 @@ systemctl restart nftable
 ./setup.sh shield
 ```
 
-### 启动服务
+部署服务：
 
 - [Status](https://github.com/auto-novel/status)
 
@@ -63,41 +63,14 @@ systemctl restart nftable
 
 ```bash
 ./setup.sh core
-```
-
-### 安装 ES 插件
-
-```bash
-cd auto-novel
-mkdir -p data/es/plugins
-chmod 777 -R data/es/plugins
-chmod 777 -R data/es/data
-docker run --rm -it --entrypoint bash -v ${PWD}/data/es/plugins:/usr/share/elasticsearch/plugins elasticsearch:8.6.1
-
-# In container
-bin/elasticsearch-plugin install analysis-icu
-```
-
-### 启动网站
-
-```bash
-cd auto-novel
-vim docker-compose.yml
-vim .env
-docker-compose up -d
-```
-
-使用以下命令测试：
-
-```bash
-curl http://127.0.0.1
-```
-
-### 配置运维脚本
-
-```bash
 make install-service
 ```
+
+部署服务：
+
+- [Monitor](https://github.com/auto-novel/monitor)
+- [Auth](https://github.com/auto-novel/auth)
+- [AutoNovel](https://github.com/auto-novel/auto-novel)
 
 ## 运维
 
