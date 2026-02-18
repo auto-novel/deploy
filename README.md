@@ -81,3 +81,23 @@ rsync -avhzP core:/root/auto-novel/data/files-extra ./
 rsync -avhzP core:/root/auto-novel/data/files-wenku ./
 rsync -avhzP core:/root/auto-novel/data/db.backup ./
 ```
+
+临时代理数据库到宿主机：
+
+```bash
+docker pull alpine/socat
+
+# auth
+docker run --network auth -p 4501:4501 --rm alpine/socat \
+    tcp-listen:4501,fork,reuseaddr tcp-connect:postgresql:5432
+docker run --network auth -p 4502:4502 --rm alpine/socat \
+    tcp-listen:4502,fork,reuseaddr tcp-connect:redis:6379
+
+# auto-novel
+docker run --network auto-novel -p 5501:5501 --rm alpine/socat \
+    tcp-listen:5501,fork,reuseaddr tcp-connect:mongo:27017
+docker run --network auto-novel -p 5502:5502 --rm alpine/socat \
+    tcp-listen:5502,fork,reuseaddr tcp-connect:elasticsearch:9200
+docker run --network auto-novel -p 5503:5503 --rm alpine/socat \
+    tcp-listen:5503,fork,reuseaddr tcp-connect:redis:6379
+```
