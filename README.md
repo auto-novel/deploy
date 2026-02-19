@@ -1,5 +1,9 @@
 # Deploy 服务器部署手册
 
+[![GPL-3.0](https://img.shields.io/github/license/auto-novel/deploy)](https://github.com/auto-novel/deploy#license)
+
+该项目是 AutoNovel 服务器部署手册，网站架构如下：
+
 ![网站架构图](https://raw.githubusercontent.com/auto-novel/deploy/refs/heads/main/image/arch.png)
 
 ## 配置服务器
