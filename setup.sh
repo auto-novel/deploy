@@ -26,6 +26,9 @@ setup_login_shell() {
 
     log_info "配置登录 shell..."
 
+    # 设置系统时区
+    timedatectl set-timezone Asia/Shanghai
+
     # 清空默认的今日消息
     > /etc/motd
 
