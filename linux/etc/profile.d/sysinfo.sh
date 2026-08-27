@@ -132,18 +132,66 @@ done
 # Docker 容器状态
 #######################################
 
-mapfile -t containers < <(docker ps -a --format '{{.Names}}\t{{.Status}}' | awk '{ print $1,$2 }')
-
-out=""
-for i in "${!containers[@]}"; do
-    read -r name status <<< "${containers[i]}"
-    [[ "$status" == "Up" ]] && color="$GREEN" || color="$RED"
-    out+="${name}:,${color}${status,,}${RESET},"
-    (( (i+1) % 2 )) || out+="\n"
-done
-
 echo
 echo "Docker status:"
-printf '%b' "$out" | column -ts $',' | sed -e 's/^/  /'
+
+if ! docker_output=$(docker ps -a \
+    --format '{{.Label "com.docker.compose.project"}}|{{.Label "com.docker.compose.service"}}|{{.Names}}|{{.State}}' \
+    2>/dev/null); then
+    printf '  %bDocker is unavailable%b\n' "$DIM" "$RESET"
+elif [[ -z "$docker_output" ]]; then
+    printf '  %bNo containers%b\n' "$DIM" "$RESET"
+else
+    mapfile -t containers < <(
+        printf '%s\n' "$docker_output" |
+            awk -F '|' 'BEGIN { OFS=FS } {
+                if ($1 == "") $1 = "standalone"
+                if ($2 == "") $2 = $3
+                print
+            }' |
+            sort -t '|' -k1,1 -k2,2 -k3,3
+    )
+
+    current_project=""
+    project_item_count=0
+    for container in "${containers[@]}"; do
+        IFS='|' read -r project service name state <<< "$container"
+
+        if [[ "$project" != "$current_project" ]]; then
+            if [[ -n "$current_project" ]]; then
+                (( project_item_count % 2 == 1 )) && printf '\n'
+                echo
+            fi
+            printf '  %s:\n' "$project"
+            current_project=$project
+            project_item_count=0
+        fi
+
+        case "$state" in
+            running)
+                symbol="●"
+                color=$GREEN
+                ;;
+            paused|restarting)
+                symbol="●"
+                color=$YELLOW
+                ;;
+            *)
+                symbol="✕"
+                color=$RED
+                ;;
+        esac
+
+        printf '    %-20s %b%s %-10s%b' \
+            "$service" "$color" "$symbol" "$state" "$RESET"
+        (( project_item_count += 1 ))
+        if (( project_item_count % 2 == 1 )); then
+            printf '  '
+        else
+            printf '\n'
+        fi
+    done
+    (( project_item_count % 2 == 1 )) && printf '\n'
+fi
 echo
 )
