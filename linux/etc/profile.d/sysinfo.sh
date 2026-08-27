@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [[ $- != *i* || ! -t 1 ]]; then
+    return 0 2>/dev/null || exit 0
+fi
+
+(
 GREEN="\e[1;32m"
 RED="\e[1;31m"
 DIM="\e[2m"
@@ -18,9 +23,12 @@ DAYS=$(awk '{print int($1/86400)}' /proc/uptime)
 read -r LOAD1 LOAD5 LOAD15 _ < /proc/loadavg
 
 echo
-echo -e " CPU:     $CPU_NAME ($GREEN$CPU_COUNT$RESET vCPU)"
-echo -e " Load:    $GREEN$LOAD1$RESET 1m / $GREEN$LOAD5$RESET 5m / $GREEN$LOAD15$RESET 15m"
-echo -e " Uptime:  $GREEN$DAYS$RESET days"
+printf ' CPU:     %s (%b%s%b vCPU)\n' "$CPU_NAME" "$GREEN" "$CPU_COUNT" "$RESET"
+printf ' Load:    %b%s%b 1m / %b%s%b 5m / %b%s%b 15m\n' \
+    "$GREEN" "$LOAD1" "$RESET" \
+    "$GREEN" "$LOAD5" "$RESET" \
+    "$GREEN" "$LOAD15" "$RESET"
+printf ' Uptime:  %b%s%b days\n' "$GREEN" "$DAYS" "$RESET"
 
 #######################################
 # 内存、磁盘使用
@@ -36,7 +44,9 @@ print_bar() {
 
     local color=$([ "$usage" -ge "$max_usage" ] && echo "$RED" || echo "$GREEN")
     local bar=$(printf "%-${bar_width}s" | tr ' ' '=')
-    echo -e " [${color}${bar:0:used_width}${RESET}${DIM}${bar:used_width}${RESET}]"
+    printf ' [%b%s%b%b%s%b]\n' \
+        "$color" "${bar:0:used_width}" "$RESET" \
+        "$DIM" "${bar:used_width}" "$RESET"
 }
 
 # 显示内存使用情况
@@ -72,7 +82,11 @@ services=(
 out=" "
 line_length=0
 for service in "${services[@]}"; do
-    status=$([[ $(systemctl is-active "$service") == "active" ]] && echo "$GREEN▲" || echo "$RED▼")
+    if systemctl is-active --quiet "$service" 2>/dev/null; then
+        status="$GREEN▲"
+    else
+        status="$RED▼"
+    fi
     length=$(( ${#service} + 4 ))
     if (( line_length + length > 50 )); then
         out+="\n "
@@ -84,7 +98,7 @@ done
 
 echo
 echo "services status:"
-echo -e "$out"
+printf '%b\n' "$out"
 
 #######################################
 # Docker 容器状态
@@ -102,5 +116,6 @@ done
 
 echo
 echo "docker status:"
-printf "$out" | column -ts $',' | sed -e 's/^/  /'
+printf '%b' "$out" | column -ts $',' | sed -e 's/^/  /'
 echo
+)
