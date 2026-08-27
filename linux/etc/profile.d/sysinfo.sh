@@ -59,7 +59,15 @@ unset -f print_bar
 # 服务状态
 #######################################
 
-services=("nftables" "tailscaled" "auto-novel-updater.timer" "auto-novel-tmp-cleanup.timer")
+services=(
+    "nftables"
+    "tailscaled"
+    "deploy@auto-novel.timer"
+    "deploy@auth.timer"
+    "deploy@monitor.timer"
+    "docker-image-prune.timer"
+    "auto-novel-tmp-cleanup.timer"
+)
 
 out=" "
 line_length=0

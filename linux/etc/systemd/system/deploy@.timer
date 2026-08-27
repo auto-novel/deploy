@@ -1,10 +1,11 @@
 [Unit]
-Description=Update auto-novel
-Requires=auto-novel-updater.service
+Description=Deploy %i Docker Compose application daily
 
 [Timer]
 OnCalendar=*-*-* 04:00:00
 RandomizedDelaySec=1800
+Persistent=true
+Unit=deploy@%i.service
 
 [Install]
 WantedBy=timers.target
