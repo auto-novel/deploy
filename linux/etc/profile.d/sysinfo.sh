@@ -95,23 +95,19 @@ for i in "${!services[@]}"; do
     done < <(systemctl show "$service" --property=LoadState,ActiveState 2>/dev/null)
 
     if [[ "$load_state" == "not-found" ]]; then
-        symbol="○"
         status="missing"
         color=$DIM
     else
         case "$active_state" in
             active)
-                symbol="●"
                 status="active"
                 color=$GREEN
                 ;;
             failed)
-                symbol="✕"
                 status="failed"
                 color=$RED
                 ;;
             *)
-                symbol="○"
                 status="inactive"
                 color=$YELLOW
                 ;;
@@ -119,7 +115,7 @@ for i in "${!services[@]}"; do
     fi
 
     (( i % 2 == 0 )) && printf ' '
-    printf '%-28s %b%s %-8s%b' "$service" "$color" "$symbol" "$status" "$RESET"
+    printf '%-28s %b%-8s%b' "$service" "$color" "$status" "$RESET"
     if (( i % 2 == 0 )); then
         printf '  '
     else
@@ -169,25 +165,20 @@ else
 
         case "$state" in
             running)
-                symbol="●"
                 color=$GREEN
                 ;;
             paused|restarting)
-                symbol="●"
                 color=$YELLOW
                 ;;
             *)
-                symbol="✕"
                 color=$RED
                 ;;
         esac
 
-        printf '    %-20s %b%s %-10s%b' \
-            "$service" "$color" "$symbol" "$state" "$RESET"
+        printf '    %-14s %b%-10s%b' \
+            "$service" "$color" "$state" "$RESET"
         (( project_item_count += 1 ))
-        if (( project_item_count % 2 == 1 )); then
-            printf '  '
-        else
+        if (( project_item_count % 2 == 0 )); then
             printf '\n'
         fi
     done
