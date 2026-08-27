@@ -1,11 +1,12 @@
 #!/bin/bash
 
-if [[ $- != *i* || ! -t 1 ]]; then
-    return 0 2>/dev/null || exit 0
-fi
+# if [[ $- != *i* || ! -t 1 ]]; then
+#     return 0 2>/dev/null || exit 0
+# fi
 
 (
 GREEN="\e[1;32m"
+YELLOW="\e[1;33m"
 RED="\e[1;31m"
 DIM="\e[2m"
 RESET="\e[0m"
@@ -35,7 +36,7 @@ printf ' Uptime:  %b%s%b days\n' "$GREEN" "$DAYS" "$RESET"
 #######################################
 
 echo
-echo "usage:"
+echo "Usage:"
 print_bar() {
     local usage=$1
     local max_usage=90
@@ -79,26 +80,53 @@ services=(
     "auto-novel-tmp-cleanup.timer"
 )
 
-out=" "
-line_length=0
-for service in "${services[@]}"; do
-    if systemctl is-active --quiet "$service" 2>/dev/null; then
-        status="$GREEN▲"
-    else
-        status="$RED▼"
-    fi
-    length=$(( ${#service} + 4 ))
-    if (( line_length + length > 50 )); then
-        out+="\n "
-        line_length=0
-    fi
-    out+="${service} ${status}${RESET}  "
-    line_length=$(( line_length+length ))
-done
-
 echo
-echo "services status:"
-printf '%b\n' "$out"
+echo "Services status:"
+for i in "${!services[@]}"; do
+    service=${services[i]}
+    load_state="not-found"
+    active_state="inactive"
+
+    while IFS='=' read -r property value; do
+        case "$property" in
+            LoadState) load_state=$value ;;
+            ActiveState) active_state=$value ;;
+        esac
+    done < <(systemctl show "$service" --property=LoadState,ActiveState 2>/dev/null)
+
+    if [[ "$load_state" == "not-found" ]]; then
+        symbol="○"
+        status="missing"
+        color=$DIM
+    else
+        case "$active_state" in
+            active)
+                symbol="●"
+                status="active"
+                color=$GREEN
+                ;;
+            failed)
+                symbol="✕"
+                status="failed"
+                color=$RED
+                ;;
+            *)
+                symbol="○"
+                status="inactive"
+                color=$YELLOW
+                ;;
+        esac
+    fi
+
+    (( i % 2 == 0 )) && printf ' '
+    printf '%-28s %b%s %-8s%b' "$service" "$color" "$symbol" "$status" "$RESET"
+    if (( i % 2 == 0 )); then
+        printf '  '
+    else
+        printf '\n'
+    fi
+done
+(( ${#services[@]} % 2 == 1 )) && printf '\n'
 
 #######################################
 # Docker 容器状态
@@ -115,7 +143,7 @@ for i in "${!containers[@]}"; do
 done
 
 echo
-echo "docker status:"
+echo "Docker status:"
 printf '%b' "$out" | column -ts $',' | sed -e 's/^/  /'
 echo
 )
