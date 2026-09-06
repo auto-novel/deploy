@@ -1,0 +1,89 @@
+set positional-arguments
+set dotenv-load
+
+# List available commands without starting services.
+default:
+    @just --list
+
+# Back up wenku and extra once; use `just primary dry-run` to preview.
+primary mode="apply":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mode=$1
+    case "$mode" in
+        apply) dry_run=false ;;
+        dry-run) dry_run=true ;;
+        *) echo 'Usage: just primary [apply|dry-run]' >&2; exit 2 ;;
+    esac
+    docker compose -f docker-compose.primary.yml run --rm --no-deps \
+        -e RESTIC_DRY_RUN="$dry_run" restic-primary
+
+# Prepare the local repository and start the Backup HTTP server.
+backup:
+    docker compose -f docker-compose.backup.yml up -d rest-server
+
+# Start the HTTP backup server; do not enable FUSE.
+[private]
+server:
+    docker compose -f docker-compose.backup.yml up -d rest-server
+
+# Enable FUSE explicitly; prepare the shared mount first (see README).
+[private]
+mount:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mount_path=${RESTIC_MOUNT_PATH:-/data/restic/mount}
+    case "$mount_path" in
+        /*) ;;
+        *) echo 'RESTIC_MOUNT_PATH must be an absolute path.' >&2; exit 1 ;;
+    esac
+
+    echo 'Stopping the previous restic-mount container'
+    docker compose -f docker-compose.backup.yml --profile mount stop restic-mount
+
+    # A propagated FUSE mount can remain disconnected after its container stops.
+    mount_record=$(findmnt -rn --mountpoint "$mount_path" -o FSTYPE,SOURCE 2>/dev/null || true)
+    if [[ "$mount_record" == fuse*restic* ]]; then
+        echo "Detaching stale restic FUSE mount at $mount_path"
+        sudo umount --lazy "$mount_path"
+    fi
+
+    sudo mkdir -p -- "$mount_path"
+    if ! mountpoint --quiet "$mount_path"; then
+        sudo mount --bind "$mount_path" "$mount_path"
+    fi
+    sudo mount --make-rshared "$mount_path"
+
+    propagation=$(findmnt -n -o PROPAGATION --target "$mount_path")
+    if [[ "$propagation" != shared* ]]; then
+        echo "Mount propagation is '$propagation', expected 'shared'." >&2
+        exit 1
+    fi
+
+    docker compose -f docker-compose.backup.yml up -d restic-mount
+
+# Keep the latest snapshot per host/path group; use `just cleanup dry-run` to preview.
+cleanup mode="apply":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mode=$1
+    case "$mode" in
+        apply|dry-run) ;;
+        *) echo 'Usage: just cleanup [apply|dry-run]' >&2; exit 2 ;;
+    esac
+    dc() { docker compose -f docker-compose.backup.yml "$@"; }
+    trap 'echo "服务不会自动重启。需要时在当前目录执行 just up。"' EXIT
+    dc --profile mount down
+    dc --profile tools run --rm --no-deps --entrypoint /bin/sh restic-admin -ec '
+        /entrypoint.sh check
+        mode=$1
+        set -- forget --host "$RESTIC_PRIMARY_HOSTNAME" --tag "$RESTIC_TAG" \
+            --group-by host,paths --keep-last 1
+        if [ "$mode" = dry-run ]; then
+            /entrypoint.sh "$@" --dry-run
+        else
+            /entrypoint.sh "$@"
+            /entrypoint.sh prune --max-repack-size "$RESTIC_PRUNE_MAX_REPACK_SIZE"
+            /entrypoint.sh check
+        fi
+    ' -- "$mode"

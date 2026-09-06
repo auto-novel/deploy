@@ -1,0 +1,11 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+MAILTO=""
+
+# One directory and .env per target. All lines share one lock, so source scans are serialized.
+# Create /var/log/auto-novel-restic and install the logrotate config from README first.
+# END exit=0 includes successful runs which skip an unchanged snapshot.
+17 * * * * root /bin/sh -c 'cd /root/deploy/backup/restic || exit; echo "$(date -Iseconds) START"; /usr/bin/flock --exclusive --wait 3300 /run/lock/auto-novel-restic.lock /usr/bin/docker compose -f docker-compose.primary.yml run --rm --no-deps -T restic-primary; result=$?; echo "$(date -Iseconds) END exit=$result"; exit "$result"' >> /var/log/auto-novel-restic/replica-01.log 2>&1
+
+# Example for a future second Replica. Prepare its directory and .env, then uncomment.
+# 22 * * * * root /bin/sh -c 'cd /root/deploy/backup/restic-replica-02 || exit; echo "$(date -Iseconds) START"; /usr/bin/flock --exclusive --wait 3300 /run/lock/auto-novel-restic.lock /usr/bin/docker compose -f docker-compose.primary.yml run --rm --no-deps -T restic-primary; result=$?; echo "$(date -Iseconds) END exit=$result"; exit "$result"' >> /var/log/auto-novel-restic/replica-02.log 2>&1
