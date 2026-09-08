@@ -1,0 +1,55 @@
+name: auto-novel-restic-primary
+
+services:
+  restic-primary:
+    image: restic/restic:0.19.1
+    hostname: ${RESTIC_HOSTNAME:-auto-novel-primary}
+    working_dir: /source
+
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:?RESTIC_REPOSITORY is required}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is required}
+      RESTIC_REST_USERNAME: ${RESTIC_REST_USERNAME:?RESTIC_REST_USERNAME is required}
+      RESTIC_REST_PASSWORD: ${RESTIC_REST_PASSWORD:?RESTIC_REST_PASSWORD is required}
+      RESTIC_CACHE_DIR: /cache
+      RESTIC_HOST: ${RESTIC_HOSTNAME:-auto-novel-primary}
+      RESTIC_TAG: ${RESTIC_TAG:-auto-novel}
+      RESTIC_READ_CONCURRENCY: ${RESTIC_READ_CONCURRENCY:-1}
+      NICE: ${NICE:-10}
+      IONICE_CLASS: ${IONICE_CLASS:-2}
+      IONICE_PRIORITY: ${IONICE_PRIORITY:-7}
+
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        set -- backup --host "$$RESTIC_HOST" --tag "$$RESTIC_TAG" \
+          --read-concurrency "$$RESTIC_READ_CONCURRENCY" \
+          --skip-if-unchanged --no-scan
+        if [ "$${RESTIC_DRY_RUN:-false}" = true ]; then
+          set -- "$$@" --dry-run
+        fi
+        exec /entrypoint.sh "$$@" files-wenku files-extra
+
+    volumes:
+      - type: bind
+        source: ${RESTIC_CACHE_PATH:?RESTIC_CACHE_PATH is required}
+        target: /cache
+        bind:
+          create_host_path: true
+
+      - type: bind
+        source: ${WENKU_PATH:?WENKU_PATH is required}
+        target: /source/files-wenku
+        # Hard safety boundary: Primary can never modify production data.
+        read_only: true
+        bind:
+          create_host_path: false
+
+      - type: bind
+        source: ${EXTRA_PATH:?EXTRA_PATH is required}
+        target: /source/files-extra
+        # Hard safety boundary: Primary can never modify production data.
+        read_only: true
+        bind:
+          create_host_path: false

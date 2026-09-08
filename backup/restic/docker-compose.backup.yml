@@ -1,0 +1,192 @@
+name: ${REPLICA_NAME:?REPLICA_NAME is required}
+
+# Per container: at most two 5 MiB log files (10 MiB before compression).
+x-backup-logging: &backup-logging
+  driver: local
+  options:
+    max-size: "5m"
+    max-file: "2"
+    compress: "true"
+
+x-repository-bind: &repository-bind
+  type: bind
+  source: ${RESTIC_REPOSITORY_PATH:?RESTIC_REPOSITORY_PATH is required}
+  bind:
+    create_host_path: true
+
+x-cache-bind: &cache-bind
+  type: bind
+  source: ${RESTIC_CACHE_PATH:?RESTIC_CACHE_PATH is required}
+  bind:
+    create_host_path: true
+
+services:
+  restic-init:
+    image: restic/restic:0.19.1
+    restart: "no"
+    network_mode: none
+    logging: *backup-logging
+
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      RESTIC_REPOSITORY: /repository/${RESTIC_REST_USERNAME:?RESTIC_REST_USERNAME is required}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is required}
+      RESTIC_CACHE_DIR: /cache
+      NICE: ${NICE:-10}
+      IONICE_CLASS: ${IONICE_CLASS:-2}
+      IONICE_PRIORITY: ${IONICE_PRIORITY:-7}
+
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        # Capture only stderr: a missing repository is expected on first startup.
+        if probe_error=$$(/entrypoint.sh cat config 2>&1 >/dev/null); then
+          echo 'Existing repository is ready.'
+        else
+          result=$$?
+          if [ "$$result" -ne 10 ]; then
+            printf '%s\n' "$$probe_error" >&2
+            exit "$$result"
+          fi
+          if [ -e "$$RESTIC_REPOSITORY" ] && [ -n "$$(ls -A "$$RESTIC_REPOSITORY")" ]; then
+            echo 'Repository config is missing but the directory is not empty; refusing to initialize.' >&2
+            exit 1
+          fi
+          echo 'Repository does not exist; initializing it now.'
+          exec /entrypoint.sh init
+        fi
+
+    volumes:
+      - <<: *repository-bind
+        target: /repository
+      - <<: *cache-bind
+        target: /cache
+
+  rest-server:
+    image: restic/rest-server:0.14.0
+    container_name: ${REPLICA_NAME:?REPLICA_NAME is required}-rest-server
+    restart: unless-stopped
+    logging: *backup-logging
+    depends_on:
+      restic-init:
+        condition: service_completed_successfully
+
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      PASSWORD_FILE: /tmp/rest-server.htpasswd
+      RESTIC_REST_USERNAME: ${RESTIC_REST_USERNAME:?RESTIC_REST_USERNAME is required}
+      RESTIC_REST_PASSWORD: ${RESTIC_REST_PASSWORD:?RESTIC_REST_PASSWORD is required}
+      OPTIONS: >-
+        --append-only
+        --private-repos
+        --log -
+        --max-size ${REST_SERVER_MAX_SIZE:-0}
+
+    # Generate the single user's bcrypt credentials from env on each start.
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        umask 077
+        printf '%s\n' "$$RESTIC_REST_PASSWORD" | htpasswd -Bic "$$PASSWORD_FILE" "$$RESTIC_REST_USERNAME"
+        exec /entrypoint.sh
+
+    ports:
+      - target: 8000
+        published: "${REST_SERVER_PORT:-8000}"
+        host_ip: ${REST_SERVER_LISTEN_ADDRESS:-127.0.0.1}
+        protocol: tcp
+
+    volumes:
+      - <<: *repository-bind
+        target: /data
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qSO /dev/null http://127.0.0.1:8000/ 2>&1 | grep -q ' 401 '"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    stop_grace_period: 1m
+
+  restic-mount:
+    image: restic/restic:0.19.1
+    profiles: ["mount"]
+    container_name: ${REPLICA_NAME:?REPLICA_NAME is required}-restic-mount
+    restart: unless-stopped
+    logging: *backup-logging
+    depends_on:
+      restic-init:
+        condition: service_completed_successfully
+
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      RESTIC_REPOSITORY: /repository/${RESTIC_REST_USERNAME:?RESTIC_REST_USERNAME is required}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is required}
+      RESTIC_CACHE_DIR: /cache
+
+    command:
+      - --no-lock
+      - mount
+      - --allow-other
+      - --host
+      - ${RESTIC_PRIMARY_HOSTNAME:-auto-novel-primary}
+      - --tag
+      - ${RESTIC_TAG:-auto-novel}
+      - --path-template
+      - "snapshots/%T"
+      - /mnt/restic
+
+    volumes:
+      - <<: *repository-bind
+        target: /repository
+        read_only: true
+      - <<: *cache-bind
+        target: /cache
+
+      - type: bind
+        source: ${RESTIC_MOUNT_PATH:-/data/restic/mount}
+        target: /mnt/restic
+        bind:
+          propagation: rshared
+          create_host_path: false
+
+    devices:
+      - /dev/fuse:/dev/fuse
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+
+    healthcheck:
+      test: ["CMD-SHELL", "awk '$$5 == \"/mnt/restic\" && $$0 ~ /fuse/ { found=1 } END { exit !found }' /proc/self/mountinfo"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 1m
+
+    stop_grace_period: 1m
+
+  restic-admin:
+    image: restic/restic:0.19.1
+    profiles: ["tools"]
+    logging: *backup-logging
+
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      RESTIC_REPOSITORY: /repository/${RESTIC_REST_USERNAME:?RESTIC_REST_USERNAME is required}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:?RESTIC_PASSWORD is required}
+      RESTIC_CACHE_DIR: /cache
+      RESTIC_PRIMARY_HOSTNAME: ${RESTIC_PRIMARY_HOSTNAME:-auto-novel-primary}
+      RESTIC_TAG: ${RESTIC_TAG:-auto-novel}
+      RESTIC_PRUNE_MAX_REPACK_SIZE: ${RESTIC_PRUNE_MAX_REPACK_SIZE:-1G}
+      NICE: ${NICE:-10}
+      IONICE_CLASS: ${IONICE_CLASS:-2}
+      IONICE_PRIORITY: ${IONICE_PRIORITY:-7}
+
+    volumes:
+      - <<: *repository-bind
+        target: /repository
+      - <<: *cache-bind
+        target: /cache

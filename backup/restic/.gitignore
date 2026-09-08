@@ -1,0 +1,10 @@
+.env
+.env.primary
+.env.backup
+.env.replica
+.env.primary.*
+.env.backup.*
+!.env.primary.example
+!.env.backup.example
+config/
+data/
