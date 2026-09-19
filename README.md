@@ -76,15 +76,15 @@ make install-service
 - [Auth](https://github.com/auto-novel/auth)
 - [AutoNovel](https://github.com/auto-novel/auto-novel)
 
-`make install-service` 会启用 `auto-novel`、`auth` 和 `monitor` 的每日自动升级。
+`make install-service` 会启用一个每日自动升级任务，按顺序更新 `auto-novel`、`auth` 和 `monitor`。
 三个项目应分别部署在 `/root/auto-novel`、`/root/auth` 和 `/root/monitor`，并在项目根目录提供 Docker Compose 配置。
-升级任务默认在每天 04:00 后的 30 分钟内随机执行；未使用的 Docker 镜像会在 06:00 后单独清理。
+升级任务默认在每天 04:00 后的 30 分钟内随机执行；某个项目更新失败不会阻止其余项目更新，随后会清理未使用的 Docker 镜像，但任务会以失败状态结束。
 
 查看定时任务和最近一次升级日志：
 
 ```bash
-systemctl list-timers 'deploy@*' docker-image-prune.timer
-journalctl -u deploy@auth.service -n 100
+systemctl list-timers update-apps.timer
+journalctl -u update-apps.service -n 100
 ```
 
 ## 运维

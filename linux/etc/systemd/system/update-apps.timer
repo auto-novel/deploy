@@ -1,11 +1,11 @@
 [Unit]
-Description=Deploy %i Docker Compose application daily
+Description=Update Docker Compose applications daily
 
 [Timer]
 OnCalendar=*-*-* 04:00:00
 RandomizedDelaySec=1800
 Persistent=true
-Unit=deploy@%i.service
+Unit=update-apps.service
 
 [Install]
 WantedBy=timers.target

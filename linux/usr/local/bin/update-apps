@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+projects=(auto-novel auth monitor)
+failed_projects=()
+
+for project in "${projects[@]}"; do
+    echo "==> Updating ${project}"
+
+    if ! (
+        cd "/root/${project}" &&
+        /usr/bin/git pull --ff-only &&
+        /usr/bin/docker compose pull &&
+        /usr/bin/docker compose up -d
+    ); then
+        echo "==> Failed to update ${project}" >&2
+        failed_projects+=("${project}")
+    fi
+done
+
+echo "==> Pruning unused Docker images"
+if ! /usr/bin/docker image prune -f; then
+    echo "==> Failed to prune unused Docker images" >&2
+    failed_projects+=("docker image prune")
+fi
+
+if ((${#failed_projects[@]})); then
+    echo "Update failed for: ${failed_projects[*]}" >&2
+    exit 1
+fi

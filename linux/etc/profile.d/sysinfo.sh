@@ -73,10 +73,7 @@ unset -f print_bar
 services=(
     "nftables"
     "tailscaled"
-    "deploy@auto-novel.timer"
-    "deploy@auth.timer"
-    "deploy@monitor.timer"
-    "docker-image-prune.timer"
+    "update-apps.timer"
     "auto-novel-tmp-cleanup.timer"
 )
 
