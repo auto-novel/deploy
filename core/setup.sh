@@ -21,6 +21,34 @@ log_error() {
     echo -e "${RED}[ERROR]${RESET} $1"
 }
 
+install_if_changed() {
+    local source="$1" target="$2" mode="$3"
+
+    if [[ ! -f "$target" ]] || ! cmp -s "$source" "$target" || [[ "$(stat -c '%a' "$target")" != "$mode" ]]; then
+        install -Dm"$mode" "$source" "$target"
+    fi
+}
+
+download_if_changed() {
+    local url="$1" target="$2" mode="$3" temporary
+    temporary="$(mktemp)"
+
+    if ! curl -fsSL "$url" -o "$temporary"; then
+        rm -f "$temporary"
+        return 1
+    fi
+    install_if_changed "$temporary" "$target" "$mode"
+    rm -f "$temporary"
+}
+
+write_if_changed() {
+    local target="$1" mode="$2" content="$3" temporary
+    temporary="$(mktemp)"
+    printf '%s\n' "$content" > "$temporary"
+    install_if_changed "$temporary" "$target" "$mode"
+    rm -f "$temporary"
+}
+
 setup_login_shell() {
     log_info "配置登录 shell..."
 
@@ -28,16 +56,16 @@ setup_login_shell() {
     timedatectl set-timezone Asia/Shanghai
 
     # 清空默认的今日消息
-    > /etc/motd
+    [[ ! -s /etc/motd ]] || : > /etc/motd
 
     # 同步登录信息；每次运行均以仓库版本为准。
-    install -Dm0644 ./etc/profile.d/sysinfo.sh /etc/profile.d/sysinfo.sh
+    install_if_changed ./etc/profile.d/sysinfo.sh /etc/profile.d/sysinfo.sh 0644
 
     # 修改hostname
     hostnamectl set-hostname core
 
     # 同步 root 的 shell 配置。
-    install -Dm0644 ./root/.bashrc /root/.bashrc
+    install_if_changed ./root/.bashrc /root/.bashrc 0644
 }
 
 setup_docker() {
@@ -45,46 +73,39 @@ setup_docker() {
 
     # Add Docker's official GPG key:
     install -m 0755 -d /etc/apt/keyrings
-    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
-    chmod a+r /etc/apt/keyrings/docker.asc
+    download_if_changed https://download.docker.com/linux/debian/gpg /etc/apt/keyrings/docker.asc 0644
 
     # Add the repository to Apt sources:
-    echo \
-      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
-      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-      tee /etc/apt/sources.list.d/docker.list > /dev/null
-    apt-get update
-
-    # Install the Docker packages:
-    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    write_if_changed /etc/apt/sources.list.d/docker.list 0644 "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable"
 }
 
 setup_cloudflared() {
     log_info "安装 Cloudflared..."
 
     # Add Cloudflare's package signing key:
-    mkdir -p --mode=0755 /usr/share/keyrings
-    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+    install -d -m 0755 /usr/share/keyrings
+    download_if_changed https://pkg.cloudflare.com/cloudflare-main.gpg /usr/share/keyrings/cloudflare-main.gpg 0644
 
     # Add Cloudflare's apt repo to your apt repositories:
-    echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" | tee /etc/apt/sources.list.d/cloudflared.list
-
-    # Update repositories and install cloudflared:
-    apt-get update
-    apt-get install -y cloudflared
+    write_if_changed /etc/apt/sources.list.d/cloudflared.list 0644 "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main"
 }
 
 setup_tailscale() {
     log_info "安装 Tailscale..."
 
     # Add Tailscale's package signing key and repository:
-    curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
-    curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list
+    download_if_changed https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg /usr/share/keyrings/tailscale-archive-keyring.gpg 0644
+    download_if_changed https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list /etc/apt/sources.list.d/tailscale.list 0644
+}
 
-    # Install Tailscale:
+install_packages() {
+    log_info "更新软件包索引并安装依赖..."
+
     apt-get update
-    apt-get install -y tailscale
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin cloudflared tailscale
+}
 
+setup_tailscale_login() {
     # 已连接的节点无需重复认证；未连接时输出认证链接并等待用户完成登录。
     if ! tailscale ip -4 >/dev/null 2>&1; then
         tailscale up
@@ -94,11 +115,11 @@ setup_tailscale() {
 setup_services() {
     log_info "安装并启用 Core 定时服务..."
 
-    install -Dm0644 ./etc/systemd/system/update-apps.service /etc/systemd/system/update-apps.service
-    install -Dm0644 ./etc/systemd/system/update-apps.timer /etc/systemd/system/update-apps.timer
-    install -Dm0644 ./etc/systemd/system/auto-novel-tmp-cleanup.service /etc/systemd/system/auto-novel-tmp-cleanup.service
-    install -Dm0644 ./etc/systemd/system/auto-novel-tmp-cleanup.timer /etc/systemd/system/auto-novel-tmp-cleanup.timer
-    install -Dm0755 ./usr/local/bin/update-apps /usr/local/bin/update-apps
+    install_if_changed ./etc/systemd/system/update-apps.service /etc/systemd/system/update-apps.service 0644
+    install_if_changed ./etc/systemd/system/update-apps.timer /etc/systemd/system/update-apps.timer 0644
+    install_if_changed ./etc/systemd/system/auto-novel-tmp-cleanup.service /etc/systemd/system/auto-novel-tmp-cleanup.service 0644
+    install_if_changed ./etc/systemd/system/auto-novel-tmp-cleanup.timer /etc/systemd/system/auto-novel-tmp-cleanup.timer 0644
+    install_if_changed ./usr/local/bin/update-apps /usr/local/bin/update-apps 0755
 
     systemctl daemon-reload
     systemctl enable --now update-apps.timer auto-novel-tmp-cleanup.timer
@@ -109,4 +130,6 @@ setup_login_shell
 setup_docker
 setup_cloudflared
 setup_tailscale
+install_packages
+setup_tailscale_login
 setup_services
