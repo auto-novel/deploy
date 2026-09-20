@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # 进入脚本所在目录的 linux 子文件夹
 cd "$(dirname "$0")/linux" || exit 1
@@ -30,14 +30,14 @@ setup_login_shell() {
     # 清空默认的今日消息
     > /etc/motd
 
-    # 修改hostname
-    cp -n ./etc/profile.d/sysinfo.sh /etc/profile.d/sysinfo.sh
+    # 同步登录信息；每次运行均以仓库版本为准。
+    install -Dm0644 ./etc/profile.d/sysinfo.sh /etc/profile.d/sysinfo.sh
 
     # 修改hostname
     hostnamectl set-hostname shield
 
-    # 配置 bashrc
-    cp -n ./root/.bashrc /root/.bashrc
+    # 同步 root 的 shell 配置。
+    install -Dm0644 ./root/.bashrc /root/.bashrc
 }
 
 setup_docker() {
@@ -56,7 +56,7 @@ setup_docker() {
     apt-get update
 
     # Install the Docker packages:
-    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 }
 
 setup_cloudflared() {
@@ -70,7 +70,8 @@ setup_cloudflared() {
     echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main" | tee /etc/apt/sources.list.d/cloudflared.list
 
     # Update repositories and install cloudflared:
-    apt-get update && apt-get install cloudflared
+    apt-get update
+    apt-get install -y cloudflared
 }
 
 setup_tailscale() {
@@ -82,10 +83,12 @@ setup_tailscale() {
 
     # Install Tailscale:
     apt-get update
-    apt-get install tailscale
+    apt-get install -y tailscale
 
-    # Connect your machine to your Tailscale network and authenticate in your browser:
-    tailscale up
+    # 已连接的节点无需重复认证；未连接时输出认证链接并等待用户完成登录。
+    if ! tailscale ip -4 >/dev/null 2>&1; then
+        tailscale up
+    fi
 }
 
 setup_login_shell

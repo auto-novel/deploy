@@ -10,7 +10,7 @@
 ./setup.sh
 ```
 
-脚本会配置登录环境、Docker、Cloudflared 和 Tailscale。
+脚本会配置登录环境、Docker、Cloudflared 和 Tailscale。它可安全地重复执行；拉取仓库更新后再次运行即可同步配置。
 
 ## 配置防火墙
 

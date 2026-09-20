@@ -10,7 +10,7 @@
 ./setup.sh
 ```
 
-脚本会配置登录环境、Docker、Cloudflared 和 Tailscale。
+脚本会配置登录环境、Docker、Cloudflared、Tailscale，并安装和启用 Core 定时服务。它可安全地重复执行；拉取仓库更新后再次运行即可同步配置和服务。
 
 ## 配置防火墙
 
@@ -21,11 +21,3 @@ sed -i "s/12345/${PORT}/g" ./linux/etc/nftables.conf
 cp -n ./linux/etc/nftables.conf /etc/nftables.conf
 systemctl restart nftables
 ```
-
-## 安装服务
-
-```bash
-make install-service
-```
-
-这会安装并启用应用自动更新和 AutoNovel 临时文件清理定时任务。
