@@ -41,8 +41,18 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 
 ## 部署 Shield
 
+`shield` 目录包含 Shield 服务器独立部署所需的初始化脚本和配置。
+
+首次初始化会配置软件源、Docker、Cloudflared、Tailscale 与 nftables；如有需要，脚本会要求完成 Tailscale 登录，随后同步配置：
+
 ```bash
 (cd shield && SSH_PORT=12345 ./bootstrap.sh)
+```
+
+日常同步配置只会同步登录环境、主机名和仓库配置文件，不会更新软件包、配置防火墙或触发 Tailscale 登录：
+
+```bash
+(cd shield && ./apply.sh)
 ```
 
 部署服务：
@@ -50,6 +60,10 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 - [Status](https://github.com/auto-novel/status)
 
 ## 部署 Core
+
+`core` 目录包含 Core 服务器独立部署所需的初始化脚本和配置副本。
+
+首次初始化会配置软件源、Docker、Cloudflared、Tailscale 与 nftables；如有需要，脚本会要求完成 Tailscale 登录，随后同步配置并安装、启用 Core 定时服务：
 
 ```bash
 (cd core && SSH_PORT=12345 ./bootstrap.sh)
@@ -72,10 +86,9 @@ systemctl list-timers update-apps.timer
 journalctl -u update-apps.service -n 100
 ```
 
-拉取本仓库更新后的日常配置同步不需要重新安装依赖：
+拉取本仓库更新后的日常配置同步不需要重新安装依赖。Core 的同步只会同步登录环境、主机名、仓库配置文件和 Core 定时服务，不会更新软件包、配置防火墙或触发 Tailscale 登录：
 
 ```bash
-(cd shield && ./apply.sh)
 (cd core && ./apply.sh)
 ```
 
