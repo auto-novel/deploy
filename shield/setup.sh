@@ -68,40 +68,24 @@ setup_login_shell() {
     install_if_changed ./root/.bashrc /root/.bashrc 0644
 }
 
-setup_docker() {
-    log_info "安装 Docker..."
+setup_packages() {
+    log_info "配置软件源并安装依赖..."
 
-    # Add Docker's official GPG key:
+    # Docker
     install -m 0755 -d /etc/apt/keyrings
     download_if_changed https://download.docker.com/linux/debian/gpg /etc/apt/keyrings/docker.asc 0644
-
-    # Add the repository to Apt sources:
     write_if_changed /etc/apt/sources.list.d/docker.list 0644 "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable"
-}
 
-setup_cloudflared() {
-    log_info "安装 Cloudflared..."
-
-    # Add Cloudflare's package signing key:
+    # Cloudflared
     install -d -m 0755 /usr/share/keyrings
     download_if_changed https://pkg.cloudflare.com/cloudflare-main.gpg /usr/share/keyrings/cloudflare-main.gpg 0644
-
-    # Add Cloudflare's apt repo to your apt repositories:
     write_if_changed /etc/apt/sources.list.d/cloudflared.list 0644 "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main"
-}
 
-setup_tailscale() {
-    log_info "安装 Tailscale..."
+    # Tailscale
     local codename
     codename="$(. /etc/os-release && printf '%s' "${VERSION_CODENAME:?未找到 Debian VERSION_CODENAME}")"
-
-    # Add Tailscale's package signing key and repository:
     download_if_changed "https://pkgs.tailscale.com/stable/debian/${codename}.noarmor.gpg" /usr/share/keyrings/tailscale-archive-keyring.gpg 0644
     download_if_changed "https://pkgs.tailscale.com/stable/debian/${codename}.tailscale-keyring.list" /etc/apt/sources.list.d/tailscale.list 0644
-}
-
-install_packages() {
-    log_info "更新软件包索引并安装依赖..."
 
     apt-get update
     apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin cloudflared tailscale
@@ -114,9 +98,6 @@ setup_tailscale_login() {
     fi
 }
 
-setup_docker
-setup_cloudflared
-setup_tailscale
-install_packages
+setup_packages
 setup_tailscale_login
 setup_login_shell
