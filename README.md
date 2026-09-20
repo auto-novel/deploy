@@ -43,20 +43,16 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 
 ```bash
 # Core
-sed -i 's/12345/${PORT}/g' ./core/linux/etc/nftables.conf
-cp -n ./core/linux/etc/nftables.conf /etc/nftables.conf
-systemctl restart nftable
+(cd core && SSH_PORT=12345 ./apply.sh)
 
 # Shield
-sed -i 's/12345/${PORT}/g' ./shield/linux/etc/nftables.conf
-cp -n ./shield/linux/etc/nftables.conf /etc/nftables.conf
-systemctl restart nftable
+(cd shield && SSH_PORT=12345 ./apply.sh)
 ```
 
 ## 部署 Shield
 
 ```bash
-(cd shield && ./setup.sh)
+(cd shield && ./bootstrap.sh)
 ```
 
 部署服务：
@@ -66,7 +62,7 @@ systemctl restart nftable
 ## 部署 Core
 
 ```bash
-(cd core && ./setup.sh)
+(cd core && ./bootstrap.sh)
 ```
 
 部署服务：
@@ -75,7 +71,7 @@ systemctl restart nftable
 - [Auth](https://github.com/auto-novel/auth)
 - [AutoNovel](https://github.com/auto-novel/auto-novel)
 
-`setup.sh` 会启用一个每日自动升级任务，按顺序更新 `auto-novel`、`auth` 和 `monitor`。
+Core 的 `bootstrap.sh` 会启用一个每日自动升级任务，按顺序更新 `auto-novel`、`auth` 和 `monitor`。
 三个项目应分别部署在 `/root/auto-novel`、`/root/auth` 和 `/root/monitor`，并在项目根目录提供 Docker Compose 配置。
 升级任务默认在每天 04:00 后的 30 分钟内随机执行；某个项目更新失败不会阻止其余项目更新，随后会清理未使用的 Docker 镜像，但任务会以失败状态结束。
 
@@ -84,6 +80,13 @@ systemctl restart nftable
 ```bash
 systemctl list-timers update-apps.timer
 journalctl -u update-apps.service -n 100
+```
+
+拉取本仓库更新后的日常配置同步不需要重新安装依赖：
+
+```bash
+(cd shield && ./apply.sh)
+(cd core && ./apply.sh)
 ```
 
 ## 运维
