@@ -11,8 +11,5 @@ install_if_changed() {
 }
 
 echo "[INFO] 同步 Shield 配置..."
-timedatectl set-timezone Asia/Shanghai
-[[ ! -s /etc/motd ]] || : > /etc/motd
-hostnamectl set-hostname shield
 install_if_changed ./etc/profile.d/sysinfo.sh /etc/profile.d/sysinfo.sh 0644
 install_if_changed ./root/.bashrc /root/.bashrc 0644

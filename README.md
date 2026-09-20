@@ -49,7 +49,7 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 (cd shield && SSH_PORT=12345 ./bootstrap.sh)
 ```
 
-日常同步配置只会同步登录环境、主机名和仓库配置文件，不会更新软件包、配置防火墙或触发 Tailscale 登录：
+日常同步配置只会同步登录环境和仓库配置文件，不会更新软件包、配置防火墙或触发 Tailscale 登录：
 
 ```bash
 (cd shield && ./apply.sh)
@@ -86,7 +86,7 @@ systemctl list-timers update-apps.timer
 journalctl -u update-apps.service -n 100
 ```
 
-拉取本仓库更新后的日常配置同步不需要重新安装依赖。Core 的同步只会同步登录环境、主机名、仓库配置文件和 Core 定时服务，不会更新软件包、配置防火墙或触发 Tailscale 登录：
+拉取本仓库更新后的日常配置同步不需要重新安装依赖。Core 的同步只会同步登录环境、仓库配置文件和 Core 定时服务，不会更新软件包、配置防火墙或触发 Tailscale 登录：
 
 ```bash
 (cd core && ./apply.sh)

@@ -3,6 +3,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/linux"
 
+timedatectl set-timezone Asia/Shanghai
+[[ ! -s /etc/motd ]] || : > /etc/motd
+hostnamectl set-hostname shield
+
 echo "[INFO] 配置软件源并安装依赖..."
 install -m 0755 -d /etc/apt/keyrings /usr/share/keyrings
 curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
