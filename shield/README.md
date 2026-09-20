@@ -17,7 +17,7 @@
 将 SSH 端口替换为实际端口后，安装 Shield 防火墙规则：
 
 ```bash
-sed -i "s/12345/${PORT}/g" ./linux/etc/nftables.shd.conf
-cp -n ./linux/etc/nftables.shd.conf /etc/nftables.conf
+sed -i "s/12345/${PORT}/g" ./linux/etc/nftables.conf
+cp -n ./linux/etc/nftables.conf /etc/nftables.conf
 systemctl restart nftables
 ```

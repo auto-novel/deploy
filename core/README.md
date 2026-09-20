@@ -17,8 +17,8 @@
 将 SSH 端口替换为实际端口后，安装 Core 防火墙规则：
 
 ```bash
-sed -i "s/12345/${PORT}/g" ./linux/etc/nftables.core.conf
-cp -n ./linux/etc/nftables.core.conf /etc/nftables.conf
+sed -i "s/12345/${PORT}/g" ./linux/etc/nftables.conf
+cp -n ./linux/etc/nftables.conf /etc/nftables.conf
 systemctl restart nftables
 ```
 

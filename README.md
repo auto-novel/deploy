@@ -43,13 +43,13 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 
 ```bash
 # Core
-sed -i 's/12345/${PORT}/g' ./core/linux/etc/nftables.core.conf
-cp -n ./core/linux/etc/nftables.core.conf /etc/nftables.conf
+sed -i 's/12345/${PORT}/g' ./core/linux/etc/nftables.conf
+cp -n ./core/linux/etc/nftables.conf /etc/nftables.conf
 systemctl restart nftable
 
 # Shield
-sed -i 's/12345/${PORT}/g' ./shield/linux/etc/nftables.shd.conf
-cp -n ./shield/linux/etc/nftables.shd.conf /etc/nftables.conf
+sed -i 's/12345/${PORT}/g' ./shield/linux/etc/nftables.conf
+cp -n ./shield/linux/etc/nftables.conf /etc/nftables.conf
 systemctl restart nftable
 ```
 
