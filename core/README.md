@@ -7,10 +7,10 @@
 在本目录执行：
 
 ```bash
-./bootstrap.sh
+SSH_PORT=12345 ./bootstrap.sh
 ```
 
-脚本会配置软件源和 Docker、Cloudflared、Tailscale，必要时要求完成 Tailscale 登录；随后同步配置并安装、启用 Core 定时服务。
+脚本会配置软件源和 Docker、Cloudflared、Tailscale 与 nftables，必要时要求完成 Tailscale 登录；随后同步配置并安装、启用 Core 定时服务。
 
 ## 日常同步配置
 
@@ -20,12 +20,4 @@
 ./apply.sh
 ```
 
-该脚本只同步登录环境、主机名、仓库配置文件和 Core 定时服务，不会更新软件包或触发 Tailscale 登录。
-
-## 配置防火墙
-
-将 SSH 端口替换为实际端口后，安装 Core 防火墙规则：
-
-```bash
-SSH_PORT=12345 ./apply.sh
-```
+该脚本只同步登录环境、主机名、仓库配置文件和 Core 定时服务，不会更新软件包、配置防火墙或触发 Tailscale 登录。

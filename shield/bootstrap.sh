@@ -15,6 +15,16 @@ curl -fsSL "https://pkgs.tailscale.com/stable/debian/${codename}.tailscale-keyri
 apt-get update
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin cloudflared tailscale
 
+if [[ -n "${SSH_PORT:-}" ]]; then
+    [[ "$SSH_PORT" =~ ^[0-9]+$ ]] && (( SSH_PORT >= 1 && SSH_PORT <= 65535 )) || { echo "SSH_PORT 必须是 1 到 65535 的端口号" >&2; exit 1; }
+    temporary="$(mktemp)"
+    trap 'rm -f "$temporary"' EXIT
+    sed "s/12345/${SSH_PORT}/g" ./etc/nftables.conf > "$temporary"
+    nft -c -f "$temporary"
+    install -Dm0644 "$temporary" /etc/nftables.conf
+    systemctl restart nftables
+fi
+
 if ! tailscale status --json 2>/dev/null | grep -q '"BackendState"[[:space:]]*:[[:space:]]*"Running"'; then
     echo "[INFO] 请完成 Tailscale 登录..."
     tailscale up

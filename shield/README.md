@@ -7,10 +7,10 @@
 在本目录执行：
 
 ```bash
-./bootstrap.sh
+SSH_PORT=12345 ./bootstrap.sh
 ```
 
-脚本会配置软件源和 Docker、Cloudflared、Tailscale，必要时要求完成 Tailscale 登录；随后同步配置。
+脚本会配置软件源和 Docker、Cloudflared、Tailscale 与 nftables，必要时要求完成 Tailscale 登录；随后同步配置。
 
 ## 日常同步配置
 
@@ -20,12 +20,4 @@
 ./apply.sh
 ```
 
-该脚本只同步登录环境、主机名和仓库配置文件，不会更新软件包或触发 Tailscale 登录。
-
-## 配置防火墙
-
-将 SSH 端口替换为实际端口后，安装 Shield 防火墙规则：
-
-```bash
-SSH_PORT=12345 ./apply.sh
-```
+该脚本只同步登录环境、主机名和仓库配置文件，不会更新软件包、配置防火墙或触发 Tailscale 登录。

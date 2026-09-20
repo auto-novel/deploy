@@ -39,20 +39,10 @@ systemctl restart sshd
 ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 ```
 
-### 配置防火墙
-
-```bash
-# Core
-(cd core && SSH_PORT=12345 ./apply.sh)
-
-# Shield
-(cd shield && SSH_PORT=12345 ./apply.sh)
-```
-
 ## 部署 Shield
 
 ```bash
-(cd shield && ./bootstrap.sh)
+(cd shield && SSH_PORT=12345 ./bootstrap.sh)
 ```
 
 部署服务：
@@ -62,7 +52,7 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 ## 部署 Core
 
 ```bash
-(cd core && ./bootstrap.sh)
+(cd core && SSH_PORT=12345 ./bootstrap.sh)
 ```
 
 部署服务：
