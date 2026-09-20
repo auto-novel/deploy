@@ -92,10 +92,12 @@ setup_cloudflared() {
 
 setup_tailscale() {
     log_info "安装 Tailscale..."
+    local codename
+    codename="$(. /etc/os-release && printf '%s' "${VERSION_CODENAME:?未找到 Debian VERSION_CODENAME}")"
 
     # Add Tailscale's package signing key and repository:
-    download_if_changed https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg /usr/share/keyrings/tailscale-archive-keyring.gpg 0644
-    download_if_changed https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list /etc/apt/sources.list.d/tailscale.list 0644
+    download_if_changed "https://pkgs.tailscale.com/stable/debian/${codename}.noarmor.gpg" /usr/share/keyrings/tailscale-archive-keyring.gpg 0644
+    download_if_changed "https://pkgs.tailscale.com/stable/debian/${codename}.tailscale-keyring.list" /etc/apt/sources.list.d/tailscale.list 0644
 }
 
 install_packages() {
@@ -106,8 +108,8 @@ install_packages() {
 }
 
 setup_tailscale_login() {
-    # 已连接的节点无需重复认证；未连接时输出认证链接并等待用户完成登录。
-    if ! tailscale ip -4 >/dev/null 2>&1; then
+    # 仅在未连接时认证；不以 IPv4 地址是否存在作为连接状态判断。
+    if ! tailscale status --json 2>/dev/null | grep -q '"BackendState"[[:space:]]*:[[:space:]]*"Running"'; then
         tailscale up
     fi
 }
