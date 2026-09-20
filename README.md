@@ -56,7 +56,7 @@ systemctl restart nftable
 ## 部署 Shield
 
 ```bash
-(cd shield && ./setup.sh shield)
+(cd shield && ./setup.sh)
 ```
 
 部署服务：
@@ -66,7 +66,7 @@ systemctl restart nftable
 ## 部署 Core
 
 ```bash
-(cd core && ./setup.sh core && make install-service)
+(cd core && ./setup.sh && make install-service)
 ```
 
 部署服务：

@@ -4,10 +4,10 @@
 
 ## 初始化服务器
 
-在本目录执行，参数为服务器主机名：
+在本目录执行：
 
 ```bash
-./setup.sh shield
+./setup.sh
 ```
 
 脚本会配置登录环境、Docker、Cloudflared 和 Tailscale。

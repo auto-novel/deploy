@@ -22,8 +22,6 @@ log_error() {
 }
 
 setup_login_shell() {
-    local hostname=$1
-
     log_info "配置登录 shell..."
 
     # 设置系统时区
@@ -36,7 +34,7 @@ setup_login_shell() {
     cp -n ./etc/profile.d/sysinfo.sh /etc/profile.d/sysinfo.sh
 
     # 修改hostname
-    hostnamectl set-hostname $hostname
+    hostnamectl set-hostname shield
 
     # 配置 bashrc
     cp -n ./root/.bashrc /root/.bashrc
@@ -90,7 +88,7 @@ setup_tailscale() {
     tailscale up
 }
 
-setup_login_shell "$1"
+setup_login_shell
 setup_docker
 setup_cloudflared
 setup_tailscale
