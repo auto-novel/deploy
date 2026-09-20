@@ -125,13 +125,12 @@ setup_services() {
 
     systemctl daemon-reload
     systemctl enable --now update-apps.timer auto-novel-tmp-cleanup.timer
-    systemctl restart update-apps.timer auto-novel-tmp-cleanup.timer
 }
 
-setup_login_shell
 setup_docker
 setup_cloudflared
 setup_tailscale
 install_packages
 setup_tailscale_login
 setup_services
+setup_login_shell

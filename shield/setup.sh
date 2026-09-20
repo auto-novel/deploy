@@ -114,9 +114,9 @@ setup_tailscale_login() {
     fi
 }
 
-setup_login_shell
 setup_docker
 setup_cloudflared
 setup_tailscale
 install_packages
 setup_tailscale_login
+setup_login_shell
