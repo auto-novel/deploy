@@ -92,6 +92,22 @@ journalctl -u update-apps.service -n 100
 (cd host-core && ./apply.sh)
 ```
 
+## 更新防火墙
+
+普通 `apply.sh` 不修改防火墙。首次初始化通过 `SSH_PORT` 指定实际的 SSH 监听端口，成功应用后会保存到 `/etc/default/deploy-firewall`（仅保存端口数字），以后更新规则无需重复指定：
+
+```bash
+# 按主机选择 host-core 或 host-shield
+(cd host-core && ./apply.sh --firewall)
+
+# SSH 端口变更时显式覆盖；此操作不会修改 sshd 配置
+(cd host-core && SSH_PORT=23456 ./apply.sh --firewall)
+```
+
+更新前会运行 `nft -c` 校验，随后以一个事务替换本项目管理的表，写入 `/etc/nftables.conf` 并启用开机加载。不会重启 nftables 服务，也不会清空 Docker/Tailscale 的规则。语法校验不保证 SSH 可达；目前没有自动回滚，请保留现有 SSH 会话，并通过新连接确认，必要时使用服务器控制台恢复。
+
+**旧版 Core 迁移注意：** 新规则使用 `inet core_filter` 表；旧版的 `inet filter` 表不会自动删除。首次迁移应在控制台检查旧表，在确认它仅属于本项目后删除，否则两套规则会同时生效，旧规则可能继续拦截新放行的端口。
+
 ## 运维
 
 在本地通过 SSH 更新单个服务：
