@@ -94,6 +94,25 @@ journalctl -u update-apps.service -n 100
 
 ## 运维
 
+在本地通过 SSH 更新单个服务：
+
+```bash
+# 更新 auth
+ssh core 'cd /root/auth && git pull --ff-only && docker compose pull && docker compose up -d'
+
+# 更新 forum
+ssh core 'cd /root/forum && git pull --ff-only && docker compose pull && docker compose up -d'
+
+# 更新 auto-novel
+ssh core 'cd /root/auto-novel && git pull --ff-only && docker compose pull && docker compose up -d'
+```
+
+在本地通过 SSH 重新应用 Core 配置：
+
+```bash
+ssh core 'cd /root/deploy && git pull --ff-only && (cd host-core && ./apply.sh)'
+```
+
 备份 auto-novel:
 
 ```bash
