@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# if [[ $- != *i* || ! -t 1 ]]; then
-#     return 0 2>/dev/null || exit 0
-# fi
-
 (
 GREEN="\e[1;32m"
 YELLOW="\e[1;33m"
@@ -63,8 +59,6 @@ for line in "${dfs[@]}"; do
     printf "  %-28s %4d%% used out of %4s\n" "$mount_point" "$usage" "$size"
     print_bar "$usage"
 done
-
-unset -f print_bar
 
 #######################################
 # 服务状态

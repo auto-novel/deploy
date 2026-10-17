@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# if [[ $- != *i* || ! -t 1 ]]; then
-#     return 0 2>/dev/null || exit 0
-# fi
-
 (
 GREEN="\e[1;32m"
 YELLOW="\e[1;33m"
@@ -64,8 +60,6 @@ for line in "${dfs[@]}"; do
     print_bar "$usage"
 done
 
-unset -f print_bar
-
 #######################################
 # 服务状态
 #######################################
@@ -73,8 +67,6 @@ unset -f print_bar
 services=(
     "nftables"
     "tailscaled"
-    "update-apps.timer"
-    "auto-novel-tmp-cleanup.timer"
 )
 
 echo
