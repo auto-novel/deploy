@@ -1,0 +1,7 @@
+# Cold archives are synchronized separately, never committed to Git.
+/archive/
+
+# Generated WebP output and Python caches.
+/dist/
+__pycache__/
+*.pyc

@@ -108,6 +108,17 @@ journalctl -u update-apps.service -n 100
 
 **旧版 Core 迁移注意：** 新规则使用 `inet core_filter` 表；旧版的 `inet filter` 表不会自动删除。首次迁移应在控制台检查旧表，在确认它仅属于本项目后删除，否则两套规则会同时生效，旧规则可能继续拦截新放行的端口。
 
+## 图片构建
+
+`script/r2.py` 将 `archive/` 中的静态图片压缩为 WebP，输出到 `dist/`，文件名带内容 hash：
+
+```bash
+pip install -r script/requirements.txt
+python3 script/r2.py
+```
+
+输出目录和压缩参数在脚本开头的常量中修改，脚本不接受命令行参数。
+
 ## 运维
 
 在本地通过 SSH 更新单个服务：
