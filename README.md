@@ -74,9 +74,10 @@ ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
 - [Monitor](https://github.com/auto-novel/monitor)
 - [Auth](https://github.com/auto-novel/auth)
 - [AutoNovel](https://github.com/auto-novel/auto-novel)
+- [AutoComic](https://github.com/auto-novel/auto-comic)
 
-Core 的 `bootstrap.sh` 会启用一个每日自动升级任务，按顺序更新 `auto-novel`、`auth` 和 `monitor`。
-三个项目应分别部署在 `/root/auto-novel`、`/root/auth` 和 `/root/monitor`，并在项目根目录提供 Docker Compose 配置。
+Core 的 `bootstrap.sh` 会启用一个每日自动升级任务，按顺序更新 `auto-novel`、`auto-comic`、`auth` 和 `monitor`。
+几个项目应分别部署在 `/root/auto-novel`、`/root/auto-comic`、`/root/auth` 和 `/root/monitor`，并在项目根目录提供 Docker Compose 配置。
 升级任务默认在每天 04:00 后的 30 分钟内随机执行；某个项目更新失败不会阻止其余项目更新，随后会清理未使用的 Docker 镜像，但任务会以失败状态结束。
 
 查看定时任务和最近一次升级日志：
@@ -132,6 +133,9 @@ ssh core 'cd /root/forum && git pull --ff-only && docker compose pull && docker 
 
 # 更新 auto-novel
 ssh core 'cd /root/auto-novel && git pull --ff-only && docker compose pull && docker compose up -d'
+
+# 更新 auto-comic
+ssh core 'cd /root/auto-comic && git pull --ff-only && docker compose pull && docker compose up -d'
 ```
 
 在本地通过 SSH 重新应用 Core 配置：

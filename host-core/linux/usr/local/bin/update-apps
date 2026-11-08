@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-projects=(auto-novel auth monitor)
+projects=(auto-novel auto-comic auth monitor)
 failed_projects=()
 
 for project in "${projects[@]}"; do
