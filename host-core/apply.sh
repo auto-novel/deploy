@@ -28,23 +28,18 @@ systemctl daemon-reload
 systemctl enable --now auto-novel-tmp-cleanup.timer
 
 if "$apply_firewall"; then
-    port="${SSH_PORT:-}"
-    if [[ -z "$port" && -f /etc/default/deploy-firewall ]]; then
-        port="$(< /etc/default/deploy-firewall)"
-    fi
-    [[ "$port" =~ ^[0-9]{1,5}$ ]] && (( 10#$port >= 1 && 10#$port <= 65535 )) || {
-        echo "首次配置防火墙请设置 SSH_PORT（1 到 65535）；必须与 sshd 监听端口一致" >&2
+    port="$(/usr/sbin/sshd -T | awk '$1 == "port" && !found {print $2; found = 1}')"
+    if [[ -z "$port" ]]; then
+        echo "未检测到 SSH 端口；未修改防火墙" >&2
         exit 1
-    }
+    fi
     temporary="$(mktemp)"
     trap 'rm -f -- "$temporary"' EXIT
-    sed "s/12345/$port/g" ./etc/nftables.conf > "$temporary"
+    sed "s/tcp dport 12345/tcp dport $port/" ./etc/nftables.conf > "$temporary"
     nft -c -f "$temporary"
     # Do not restart nftables: its ExecStop may flush Docker/Tailscale rules.
     nft -f "$temporary"
     install -Dm0644 "$temporary" /etc/nftables.conf
-    printf '%s\n' "$port" > "$temporary"
-    install -Dm0600 "$temporary" /etc/default/deploy-firewall
     systemctl enable --now nftables
     echo "[INFO] 已更新防火墙（SSH 端口 $port），请另开连接确认可登录。"
 fi
