@@ -48,6 +48,6 @@ if "$apply_firewall"; then
     install -Dm0644 "$temporary" /etc/nftables.conf
     printf '%s\n' "$port" > "$temporary"
     install -Dm0600 "$temporary" /etc/default/deploy-firewall
-    systemctl enable nftables
+    systemctl enable --now nftables
     echo "[INFO] 已更新防火墙（SSH 端口 $port），请另开连接确认可登录。"
 fi

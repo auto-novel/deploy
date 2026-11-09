@@ -1,6 +1,6 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
 
-PS1='\[\e[35;1m\][\u@core \[\e[94;1m\]\w\[\e[35;1m\]]\$\[\e[m\] '
+PS1='\[\e[35;1m\][\u@\h \[\e[94;1m\]\w\[\e[35;1m\]]\$\[\e[m\] '
 
 export LS_OPTIONS='--color=auto'
 eval "$(dircolors)"

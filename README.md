@@ -2,13 +2,13 @@
 
 [![GPL-3.0](https://img.shields.io/github/license/auto-novel/deploy)](https://github.com/auto-novel/deploy#license)
 
-该项目是 AutoNovel 服务器部署手册，网站架构如下：
+本手册介绍 AutoNovel 服务器的部署流程，网站架构如下：
 
 ![网站架构图](https://raw.githubusercontent.com/auto-novel/deploy/refs/heads/main/image/arch.png)
 
-## 配置服务器
+## 安装操作系统
 
-### 安装 Debian OS
+### 安装 Debian
 
 ```shell
 curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh || wget -O reinstall.sh $_
@@ -18,80 +18,78 @@ bash reinstall.sh debian 12 --password "password"
 ```shell
 apt-get update
 apt-get upgrade -y
-apt-get install -y vim ca-certificates curl gnupg
+apt-get install -y vim ca-certificates curl gnupg git
 ```
 
-### 关闭 ssh 密码登录
+### 禁用 SSH 密码登录
 
 ```shell
-shuf -i 10000-60000 -n 1 # 生成随机端口
-
-vim /etc/ssh/sshd_config
-# Port 12345
-# PasswordAuthentication no
-
-systemctl restart sshd
+sed -i.bak -E \
+  -e 's/^#?Port .*/Port 12345/' \
+  -e 's/^#?PasswordAuthentication .*/PasswordAuthentication no/' \
+  -e 's/^#?KbdInteractiveAuthentication .*/KbdInteractiveAuthentication no/' \
+  /etc/ssh/sshd_config
+sshd -t && systemctl reload ssh
 ```
 
-使用以下命令测试：
+使用以下命令测试，预期密码登录失败：
 
 ```shell
-ssh xxx -o PubkeyAuthentication=no -o PreferredAuthentications=password
+ssh -p 12345 -o PubkeyAuthentication=no -o PreferredAuthentications=password root@服务器IP
 ```
 
-## 部署 Shield
+## 配置 Shield 服务器
 
-`host-shield` 目录包含 Shield 服务器独立部署所需的初始化脚本和配置。
-
-首次初始化会配置软件源、Docker、Cloudflared、Tailscale 与 nftables；如有需要，脚本会要求完成 Tailscale 登录，随后同步配置：
+### 初始化
 
 ```bash
-(cd host-shield && SSH_PORT=12345 ./bootstrap.sh)
+cd /root
+git clone https://github.com/auto-novel/deploy.git
+cd /root/deploy/host-shield
+HOST_NAME=shd1 SSH_PORT=12345 ./bootstrap.sh
 ```
 
-日常同步配置只会同步登录环境和仓库配置文件，不会更新软件包、配置防火墙或触发 Tailscale 登录：
+脚本会安装 Docker、Cloudflared 和 Tailscale，配置防火墙并同步登录环境。如提示登录 Tailscale，请打开终端提供的链接完成登录。初始化完成后，请新建 SSH 连接，确认可正常登录。
+
+### 部署 Shield 服务
+
+参照 [Shield 部署说明](https://github.com/auto-novel/shield#部署)，克隆服务仓库：
 
 ```bash
-(cd host-shield && ./apply.sh)
+cd /root
+git clone https://github.com/auto-novel/shield.git
+cd /root/shield
 ```
 
-部署服务：
-
-- [Status](https://github.com/auto-novel/status)
-
-## 部署 Core
-
-`host-core` 目录包含 Core 服务器独立部署所需的初始化脚本和配置副本。
-
-首次初始化会配置软件源、Docker、Cloudflared、Tailscale 与 nftables；如有需要，脚本会要求完成 Tailscale 登录，随后同步配置并安装、启用 Core 定时服务：
+打开 Cloudflare 的 [API Token 配置页面](https://dash.cloudflare.com/profile/api-tokens)，选择所用 Token 的 `Edit`，将 Shield 服务器的公网 IP 添加到 `Client IP address filtering` 白名单。
 
 ```bash
-(cd host-core && SSH_PORT=12345 ./bootstrap.sh)
+printf 'CLOUDFLARE_API_TOKEN=%s\n' '你的Cloudflare_API_Token' > .env
+./scripts/gen-proxy.sh
+docker compose up -d
 ```
 
-部署服务：
+## 配置 Core 服务器
+
+### 初始化
+
+```bash
+cd /root
+git clone https://github.com/auto-novel/deploy.git
+cd /root/deploy/host-core
+SSH_PORT=12345 ./bootstrap.sh
+```
+
+脚本会安装 Docker、Cloudflared 和 Tailscale，配置防火墙并同步登录环境。如提示登录 Tailscale，请打开终端提供的链接完成登录。初始化完成后，请新建 SSH 连接，确认可正常登录。
+
+### 部署服务
+
+分别部署以下服务：
 
 - [Monitor](https://github.com/auto-novel/monitor)
 - [Auth](https://github.com/auto-novel/auth)
 - [AutoNovel](https://github.com/auto-novel/auto-novel)
 - [AutoComic](https://github.com/auto-novel/auto-comic)
-
-Core 的 `bootstrap.sh` 会启用一个每日自动升级任务，按顺序更新 `auto-novel`、`auto-comic`、`auth` 和 `monitor`。
-几个项目应分别部署在 `/root/auto-novel`、`/root/auto-comic`、`/root/auth` 和 `/root/monitor`，并在项目根目录提供 Docker Compose 配置。
-升级任务默认在每天 04:00 后的 30 分钟内随机执行；某个项目更新失败不会阻止其余项目更新，随后会清理未使用的 Docker 镜像，但任务会以失败状态结束。
-
-查看定时任务和最近一次升级日志：
-
-```bash
-systemctl list-timers update-apps.timer
-journalctl -u update-apps.service -n 100
-```
-
-拉取本仓库更新后的日常配置同步不需要重新安装依赖。Core 的同步只会同步登录环境、仓库配置文件和 Core 定时服务，不会更新软件包、配置防火墙或触发 Tailscale 登录：
-
-```bash
-(cd host-core && ./apply.sh)
-```
 
 ## 更新防火墙
 
@@ -107,7 +105,8 @@ journalctl -u update-apps.service -n 100
 
 更新前会运行 `nft -c` 校验，随后以一个事务替换本项目管理的表，写入 `/etc/nftables.conf` 并启用开机加载。不会重启 nftables 服务，也不会清空 Docker/Tailscale 的规则。语法校验不保证 SSH 可达；目前没有自动回滚，请保留现有 SSH 会话，并通过新连接确认，必要时使用服务器控制台恢复。
 
-**旧版 Core 迁移注意：** 新规则使用 `inet core_filter` 表；旧版的 `inet filter` 表不会自动删除。首次迁移应在控制台检查旧表，在确认它仅属于本项目后删除，否则两套规则会同时生效，旧规则可能继续拦截新放行的端口。
+**旧版 Core 迁移注意：** 新规则使## 更新防火墙
+用 `inet core_filter` 表；旧版的 `inet filter` 表不会自动删除。首次迁移应在控制台检查旧表，在确认它仅属于本项目后删除，否则两套规则会同时生效，旧规则可能继续拦截新放行的端口。
 
 ## 图片构建
 

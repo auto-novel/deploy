@@ -5,7 +5,7 @@ cd "$(dirname "$0")/linux"
 
 timedatectl set-timezone Asia/Shanghai
 [[ ! -s /etc/motd ]] || : > /etc/motd
-hostnamectl set-hostname shield
+hostnamectl set-hostname "${HOST_NAME:-shd}"
 
 echo "[INFO] 配置软件源并安装依赖..."
 install -m 0755 -d /etc/apt/keyrings /usr/share/keyrings
