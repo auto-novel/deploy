@@ -22,13 +22,10 @@ echo "[INFO] 同步 Core 配置..."
 install_if_changed ./etc/profile.d/sysinfo.sh /etc/profile.d/sysinfo.sh 0644
 install_if_changed ./root/.bashrc /root/.bashrc 0644
 
-install_if_changed ./etc/systemd/system/update-apps.service /etc/systemd/system/update-apps.service 0644
-install_if_changed ./etc/systemd/system/update-apps.timer /etc/systemd/system/update-apps.timer 0644
 install_if_changed ./etc/systemd/system/auto-novel-tmp-cleanup.service /etc/systemd/system/auto-novel-tmp-cleanup.service 0644
 install_if_changed ./etc/systemd/system/auto-novel-tmp-cleanup.timer /etc/systemd/system/auto-novel-tmp-cleanup.timer 0644
-install_if_changed ./usr/local/bin/update-apps /usr/local/bin/update-apps 0755
 systemctl daemon-reload
-systemctl enable --now update-apps.timer auto-novel-tmp-cleanup.timer
+systemctl enable --now auto-novel-tmp-cleanup.timer
 
 if "$apply_firewall"; then
     port="${SSH_PORT:-}"

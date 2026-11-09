@@ -67,7 +67,6 @@ done
 services=(
     "nftables"
     "tailscaled"
-    "update-apps.timer"
     "auto-novel-tmp-cleanup.timer"
 )
 
