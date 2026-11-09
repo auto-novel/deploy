@@ -12,7 +12,8 @@
 
 ```shell
 curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh || wget -O reinstall.sh $_
-bash reinstall.sh debian 12 --password "password"
+bash reinstall.sh debian 12 --username root --password 'password'
+reboot
 ```
 
 ```shell
