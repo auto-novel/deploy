@@ -10,13 +10,15 @@
 
 ### 安装 Debian
 
-```shell
+```bash
 curl -O https://raw.githubusercontent.com/bin456789/reinstall/main/reinstall.sh || wget -O reinstall.sh $_
 bash reinstall.sh debian 12 --username root --password 'password'
 reboot
 ```
 
-```shell
+重装完成后，在本地使用 `ssh-copy-id` 上传公钥，然后登录服务器后安装基础工具：
+
+```bash
 apt-get update
 apt-get upgrade -y
 apt-get install -y vim ca-certificates curl gnupg git
@@ -24,9 +26,12 @@ apt-get install -y vim ca-certificates curl gnupg git
 
 ### 禁用 SSH 密码登录
 
-```shell
-sed -i.bak -E \
-  -e 's/^#?Port .*/Port 12345/' \
+```bash
+SSH_PORT=$(shuf -i 10000-65535 -n 1)
+printf 'SSH 端口：%s\n' "$SSH_PORT"
+
+sed -i -E \
+  -e "s/^#?Port .*/Port $SSH_PORT/" \
   -e 's/^#?PasswordAuthentication .*/PasswordAuthentication no/' \
   -e 's/^#?KbdInteractiveAuthentication .*/KbdInteractiveAuthentication no/' \
   /etc/ssh/sshd_config
@@ -35,7 +40,7 @@ sshd -t && systemctl reload ssh
 
 使用以下命令测试，预期密码登录失败：
 
-```shell
+```bash
 ssh -p 12345 -o PubkeyAuthentication=no -o PreferredAuthentications=password root@服务器IP
 ```
 
