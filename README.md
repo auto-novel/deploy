@@ -102,40 +102,39 @@ cd /root/deploy/host-core
 
 ### 更新服务
 
-在本地通过 SSH 更新单个服务：
+在更新单个服务：
 
 ```bash
-# 更新 auth
-ssh core 'cd /root/auth && git pull --ff-only && docker compose pull && docker compose up -d'
-
-# 更新 forum
-ssh core 'cd /root/forum && git pull --ff-only && docker compose pull && docker compose up -d'
-
-# 更新 auto-novel
-ssh core 'cd /root/auto-novel && git pull --ff-only && docker compose pull && docker compose up -d'
-
-# 更新 auto-comic
-ssh core 'cd /root/auto-comic && git pull --ff-only && docker compose pull && docker compose up -d'
+ssh core 'cd /root/auth       && git pull --ff-only && docker compose up -d --pull always'
+ssh core 'cd /root/forum      && git pull --ff-only && docker compose up -d --pull always'
+ssh core 'cd /root/auto-novel && git pull --ff-only && docker compose up -d --pull always'
+ssh core 'cd /root/auto-comic && git pull --ff-only && docker compose up -d --pull always'
 ```
 
-在本地通过 SSH 重新应用 Core 配置：
+重新应用 Core 配置：
 
 ```bash
-ssh core 'cd /root/deploy && git pull --ff-only && cd host-core && ./apply.sh'
+ssh core 'cd /root/deploy && git pull --ff-only && cd host-core   && ./apply.sh'
+ssh shd  'cd /root/deploy && git pull --ff-only && cd host-shield && ./apply.sh'
+ssh core 'cd /root/deploy && git pull --ff-only && cd host-core   && ./apply.sh --firewall'
+ssh shd  'cd /root/deploy && git pull --ff-only && cd host-shield && ./apply.sh --firewall'
 ```
 
-### 更新防火墙
+### 临时回退
 
-普通 `apply.sh` 不修改防火墙，更新规则需显式添加 `--firewall`：
+第一个参数为项目名，自动进入 `/root/<项目名>`；后续参数为 `服务名-回退步数`：`api-1` 选择本地 latest 之前的第一个旧镜像，`api-2` 选择第二个。可同时指定多个服务，加 `--dry-run` 仅预览。
 
 ```bash
-# 按主机选择 host-core 或 host-shield
-(cd host-core && ./apply.sh --firewall)
+ssh core 'python3 /root/deploy/script/rollback.py auto-novel api-1 web-2 --dry-run'
+ssh core 'python3 /root/deploy/script/rollback.py auto-novel api-1 web-2'
 ```
 
-更新前会运行 `nft -c` 校验，随后以一个事务替换本项目管理的表，写入 `/etc/nftables.conf` 并启用开机加载。不会重启 nftables 服务，也不会清空 Docker/Tailscale 的规则。目前没有自动回滚，更新后请确认网络连通性，必要时使用服务器控制台恢复。
+恢复正常升级前，先执行以下命令，再按上节更新服务：
 
-**旧版 Core 迁移注意：** 新规则使用 `inet core_filter` 表；旧版的 `inet filter` 表不会自动删除。首次迁移应在控制台检查旧表，在确认它仅属于本项目后删除，否则两套规则会同时生效，旧规则可能继续拦截新放行的端口。
+```bash
+ssh core 'cd /root/auto-novel && git restore -- docker-compose.yml'
+```
+
 
 ### 图片构建
 
